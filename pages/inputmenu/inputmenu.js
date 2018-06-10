@@ -49,7 +49,7 @@ Page({
    * 获取标题
    */
   titleInput: function (e) {
-    console.log(e.detail.value);
+    // console.log(e.detail.value);
     this.setData({
       title: e.detail.value
     })
@@ -59,7 +59,7 @@ Page({
    * 获取简介
    */
   briefInput: function (e) {
-    console.log(e.detail.value);
+    // console.log(e.detail.value);
     this.setData({
       brief: e.detail.value
     })
@@ -76,7 +76,7 @@ Page({
       this.setData({
         id: e.currentTarget.dataset.id
       })
-      console.log(e.currentTarget.dataset.id);
+      // console.log(e.currentTarget.dataset.id);
     }
   },
 
@@ -115,7 +115,7 @@ Page({
   addMenu: function () {
     var that = this
     var len = that.data.menus.length
-    console.log(len);
+    // console.log(len);
     var menu = {}
     menu.id = len;
     menu.category = "";
@@ -170,9 +170,33 @@ Page({
       })
     }
 
+    if ("../../image/restaurant.jpg" == that.data.src) {
+      that.responseAddRestaurant("请选择餐馆图片")
+      return;
+    }
+
+    var len = array.length
+    if (that.data.title == "" || that.data.brief == "") {
+      that.responseAddRestaurant("请填写完整信息")
+      return
+    }
+
+    for (var i = 0; i < len; i++) {
+      // console.log(array[i].imgPath)
+      if ("../../image/2.jpg" == array[i].imgPath) {
+        that.responseAddRestaurant("请选择菜单图片")
+        return
+      }
+
+      if (array[i].name == "" || array[i].price == "" || array[i].category == "") {
+        that.responseAddRestaurant("请填写完整信息")
+        return
+      }
+    }
+
     // console.log("title" + that.data.title);
     // console.log("brief" + that.data.brief);
-    console.log(that.data.menus);
+    // console.log(that.data.menus);
     // 上传简介数据
     that.uploadSpotData();
   },
@@ -200,47 +224,50 @@ Page({
       success: function (res) {
         gpsLng = res.longitude
         gpsLat = res.latitude
+        // console.log("上传餐馆数据")
+        // console.log(that.data.title + " " + that.data.brief + " " + that.data.src)
+        //发送请求
+        wx.request({
+          url: menuUrl + "addSpot",
+          method: 'POST',
+          header: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          data: {
+            id: 0,
+            gpsLng: gpsLng,
+            gpsLat: gpsLat,
+            name: that.data.title,
+            briefIntro: that.data.brief,
+            bgImg: that.data.src,
+            category: "restaurant"
+          },
+          success: function (res) {
+            // console.log(res.data);
+
+            // 获取到刚刚插入记录的id
+            that.setData({
+              spotId: parseInt(res.data)
+            })
+
+            if (that.data.spotId == 19) {
+              that.responseAddRestaurant("添加餐馆失败");
+            } else {
+              that.uploadBGImage(that.data.src, that.data.spotId);
+              // 上传详细数据到服务器
+              that.uploadMenuData();
+              that.responseAddRestaurant(that.data.resultMessage);
+            }
+          },
+          fail: function (res) {
+            that.responseAddRestaurant("添加餐馆失败");
+            // console.log(res.data);
+          }
+        })
       },
     })
     
-    //发送请求
-    wx.request({
-      url: menuUrl + "addSpot",
-      method: 'POST',
-      header: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      data: {
-        id: 0,
-        gpsLng: gpsLng,
-        gpsLat: gpsLat,
-        name: that.data.title,
-        briefIntro: that.data.brief,
-        bgImg: that.data.src,
-        category: "restaurant"
-      },
-      success: function (res) {
-        console.log(res.data);
-          
-        // 获取到刚刚插入记录的id
-        that.setData({
-          spotId: parseInt(res.data)
-        })
-
-        if (that.data.spotId == 19) {
-          that.responseAddRestaurant("添加餐馆失败");
-        } else {
-          that.uploadBGImage(that.data.src, that.data.spotId);
-          // 上传详细数据到服务器
-          that.uploadMenuData();
-          that.responseAddRestaurant(that.data.resultMessage);
-        }
-      },
-      fail: function (res) {
-        that.responseAddRestaurant("添加餐馆失败");
-        // console.log(res.data);
-      }
-    })
+    
   },
 
   /**
@@ -248,9 +275,10 @@ Page({
    */
   uploadMenuData: function() {
     var that = this
-    console.log(array);
+    // console.log(array);
     var len = array.length;
     for (var i = 0; i < len; i++) {
+      // console.log("上传菜单数据" + i + "spotId" + that.data.spotId)
       // console.log(array[i]);
       var path = array[i].imgPath
       wx.request({
@@ -268,7 +296,7 @@ Page({
           spotId: parseInt(that.data.spotId)
         },
         success: function (res) {
-          console.log(res.data)
+          // console.log(res.data)
           var menuId = parseInt(res.data)
           that.uploadMenuImage(path, menuId)
           // console.log(res.data);
@@ -292,6 +320,10 @@ Page({
         icon: 'success',
         duration: 3000
       });
+      // 跳转首页
+      wx.reLaunch({
+        url: '../intro/intro',
+      })
     } else {
       wx.showModal({
         content: result,
@@ -320,7 +352,7 @@ Page({
         })
       },
       fail: function () {
-        console.log("failed");
+        // console.log("failed");
       }
     })
   },
@@ -342,7 +374,7 @@ Page({
         })
       },
       fail: function () {
-        console.log("failed");
+        // console.log("failed");
       }
     })
   },
@@ -353,9 +385,7 @@ Page({
   uploadBGImage: function (path, id) {
 
     var that = this
-    if ("../../image/restaurant.jpg" == path) {
-      return;
-    }
+    
     wx.uploadFile({
       url: menuUrl + "uploadSpotImage",
       filePath: path,
@@ -379,9 +409,7 @@ Page({
   uploadMenuImage: function (path, id) {
 
     var that = this
-    if ("../../image/2.jpg" == path) {
-      return
-    }
+    
     wx.uploadFile({
       url: menuUrl + "uploadMenuImage",
       filePath: path,
